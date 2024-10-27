@@ -3,14 +3,54 @@ const express = require('express');
 const router = express.Router();
 const Form = require('../models/formSchema');
 
+// Publish a form
+router.post('/publish', async (req, res) => {
+  const { formName } = req.body;
+
+  try {
+    const form = await Form.findOne({ formName });
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    form.published = true;
+    form.formVersion += 1; // Increment formVersion on publish
+    form.devVersion = 0;   // Reset devVersion to 0
+    await form.save();
+
+    res.status(200).json({ message: `Form ${formName} published successfully`, form });
+  } catch (error) {
+    console.error('Error publishing form:', error);
+    res.status(500).json({ message: 'Error publishing form', error });
+  }
+});
+
+
+// Unpublish a form
+router.post('/unpublish', async (req, res) => {
+  const { formName } = req.body;
+
+  try {
+    const form = await Form.findOne({ formName });
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    form.published = false;
+    await form.save();
+
+    res.status(200).json({ message: `Form ${formName} unpublished successfully`, form });
+  } catch (error) {
+    console.error('Error unpublishing form:', error);
+    res.status(500).json({ message: 'Error unpublishing form', error });
+  }
+});
+
 // Save or update a form
 router.post('/save', async (req, res) => {
   const { formName, formStructure } = req.body;
 
-  // Log the incoming request
-  console.log('Incoming form save request:');
-  console.log('Form Name:', formName);
-  console.log('Form Structure:', formStructure);
+  console.log('Incoming form save request:', formName, formStructure);
 
   if (!formName || !formStructure) {
     console.error('Form name or structure missing');
@@ -21,11 +61,15 @@ router.post('/save', async (req, res) => {
     let form = await Form.findOne({ formName });
 
     if (form) {
-      // Update the form and increment the version
+      if (form.published) {
+        return res.status(400).json({ message: 'Cannot save a published form' });
+      }
+      // Update the form and increment the devVersion
       console.log(`Updating existing form: ${formName}`);
-      form.formVersion += 1;
       form.formStructure = formStructure;
       form.formDate = Date.now();
+      form.devVersion += 1;    // Increment dev version
+      form.published = false;   // Set published to false
     } else {
       // Create a new form
       console.log(`Creating new form: ${formName}`);
@@ -41,17 +85,21 @@ router.post('/save', async (req, res) => {
   }
 });
 
+
+// routes/formRoutes.js
+
 // Fetch all forms with formStructure included
 router.get('/list', async (req, res) => {
   try {
-    // Ensure formStructure is included in the response
-    const forms = await Form.find({}, 'formName formVersion formDate formStructure');
+    // Ensure devVersion is included in the response along with formVersion, formDate, and formName
+    const forms = await Form.find({}, 'formName formVersion devVersion formDate');
     res.status(200).json(forms);
   } catch (error) {
     console.error('Error fetching forms:', error);
     res.status(500).json({ message: 'Error fetching forms', error });
   }
 });
+
 
 router.get('/getByName/:formName', async (req, res) => {
   try {
@@ -82,3 +130,26 @@ router.get('/load/:formName', async (req, res) => {
 });
 
 module.exports = router;
+
+// Clear a form
+router.post('/clear', async (req, res) => {
+  const { formName } = req.body;
+
+  try {
+    const form = await Form.findOne({ formName });
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    form.formStructure = {};   // Clear the structure
+    form.formVersion = 0;      // Reset formVersion
+    form.devVersion = 0;       // Reset devVersion
+    form.published = false;    // Set published to false
+    await form.save();
+
+    res.status(200).json({ message: `Form ${formName} cleared successfully`, form });
+  } catch (error) {
+    console.error('Error clearing form:', error);
+    res.status(500).json({ message: 'Error clearing form', error });
+  }
+});

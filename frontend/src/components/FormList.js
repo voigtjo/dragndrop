@@ -45,6 +45,7 @@ const FormList = ({ onSelectForm, onFormSaved }) => {
           <TableRow>
             <TableCell>Form Name</TableCell>
             <TableCell>Version</TableCell>
+            <TableCell>Dev Version</TableCell>
             <TableCell>Date</TableCell>
             <TableCell>Action</TableCell>
           </TableRow>
@@ -54,6 +55,7 @@ const FormList = ({ onSelectForm, onFormSaved }) => {
             <TableRow key={form._id}>
               <TableCell>{form.formName}</TableCell>
               <TableCell>{form.formVersion}</TableCell>
+              <TableCell>{form.devVersion}</TableCell>
               <TableCell>{new Date(form.formDate).toLocaleDateString()}</TableCell>
               <TableCell>
                 <Button
