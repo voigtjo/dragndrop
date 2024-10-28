@@ -141,7 +141,8 @@ router.post('/clear', async (req, res) => {
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    form.formStructure = {};   // Clear the structure
+    // Reset fields
+    form.formStructure = [];   // Clear the structure by setting it to an empty array
     form.formVersion = 0;      // Reset formVersion
     form.devVersion = 0;       // Reset devVersion
     form.published = false;    // Set published to false
