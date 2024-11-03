@@ -6,40 +6,56 @@ const FormData = require('../models/formDataSchema');
 
 // Route to save form data
 router.post('/save', async (req, res) => {
-  // Log the incoming request payload
-  console.log('Received form data:', req.body);
-
   const { formName, formVersion, formDate, dataName, formData } = req.body;
 
   try {
-    // Log the form data before saving
-    console.log('Saving form data:', { formName, formVersion, formDate, dataName, formData });
-
     let formDataEntry = new FormData({
       formName,
       formVersion,
       formDate,
-      dataName: dataName || 'DefaultDataName', // Ensure a valid dataName is provided
+      dataName: dataName || 'DefaultDataName',
       formData,
       formDataVersion: formVersion,
       formDataDate: Date.now(),
     });
 
     await formDataEntry.save();
-
-    // Log the saved data
-    console.log('Form data saved successfully:', formDataEntry);
-
     res.status(200).json(formDataEntry);
   } catch (err) {
-    // Log the error
     console.error('Error saving form data:', err);
     res.status(500).json({ message: 'Error saving form data', error: err });
   }
 });
 
+// Update form data by _id
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = await FormData.findByIdAndUpdate(id, req.body, { new: true });
+    res.status(200).json(updatedData);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating form data', error: err });
+  }
+});
 
-// Route to load form data for a specific form
+// Route to load form data by formName and formVersion as query parameters
+router.get('/', async (req, res) => {
+  const { formName, formVersion } = req.query;
+  console.log("Received request with formName:", formName, "and formVersion:", formVersion); // Debugging line
+  try {
+    const formData = await FormData.findOne({ formName, formVersion });
+    if (!formData) {
+      console.log("Form data not found for", formName, formVersion); // Debugging line
+      return res.status(404).json({ message: 'Form data not found' });
+    }
+    res.status(200).json(formData);
+  } catch (err) {
+    console.error("Error loading form data:", err);
+    res.status(500).json({ message: 'Error loading form data', error: err });
+  }
+});
+
+// Route to load all form data for a specific formName
 router.get('/:formName', async (req, res) => {
   const { formName } = req.params;
   try {

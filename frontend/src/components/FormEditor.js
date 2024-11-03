@@ -1,3 +1,5 @@
+// components/FormEditor.js
+
 import React, { useEffect, useState } from 'react';
 import { Box, Grid, TextField, Checkbox, Button } from '@mui/material';
 import axios from 'axios';
@@ -14,14 +16,11 @@ const FormEditor = ({ selectedForm }) => {
 
   // Handle saving form data (entered by the user)
   const handleSaveFormData = async () => {
-    // Log the form structure being sent
-    const formData = formStructure.map((component) => {
-      return {
-        id: component.id,
-        type: component.type,
-        value: component.value || '', // Capture entered values
-      };
-    });
+    const formData = formStructure.map((component) => ({
+      id: component.id,
+      type: component.type,
+      value: component.value || '', // Capture entered values
+    }));
   
     // Log the request payload
     console.log('Sending form data:', {
@@ -48,7 +47,6 @@ const FormEditor = ({ selectedForm }) => {
       alert('Error saving form data');
     }
   };
-  
 
   // Handle input change for form elements
   const handleInputChange = (id, value) => {
@@ -67,6 +65,7 @@ const FormEditor = ({ selectedForm }) => {
       case 'text':
         return (
           <TextField
+            key={component.id}
             label={component.label}
             value={component.value || ''}
             onChange={(e) => handleInputChange(component.id, e.target.value)}
@@ -76,6 +75,7 @@ const FormEditor = ({ selectedForm }) => {
       case 'checkbox':
         return (
           <Checkbox
+            key={component.id}
             checked={component.value || false}
             onChange={(e) => handleInputChange(component.id, e.target.checked)}
           />
@@ -88,8 +88,8 @@ const FormEditor = ({ selectedForm }) => {
   return (
     <Box sx={{ padding: 3 }}>
       <Grid container spacing={2}>
-        {formStructure.map((component, index) => (
-          <Grid key={index} item xs={3}>
+        {formStructure.map((component) => (
+          <Grid key={component.id} item xs={3}>
             {renderComponent(component)}
           </Grid>
         ))}

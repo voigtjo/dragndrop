@@ -85,9 +85,9 @@ const GridCell = ({ index, component, onDrop, onDelete }) => {
   );
 };
 
-const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Added setSelectedForm as a prop
+const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, setFormVersion }) => { 
   const [grid, setGrid] = useState(Array(16).fill(null));
-  const [formName, setFormName] = useState('');
+  const [formName, setLocalFormName] = useState('');
   const [lastVersion, setLastVersion] = useState(0);
   const [devVersion, setDevVersion] = useState(0);
   const [published, setPublished] = useState(false);
@@ -98,7 +98,7 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Add
 
   useEffect(() => {
     if (selectedForm && selectedForm.formStructure) {
-      setFormName(selectedForm.formName);
+      setLocalFormName(selectedForm.formName);
       setPublished(selectedForm.published || false);
       setLastVersion(selectedForm.formVersion || 0);
       setDevVersion(selectedForm.devVersion || 0);
@@ -108,13 +108,19 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Add
       });
       setGrid(updatedGrid);
     } else {
-      setFormName('');
+      setLocalFormName('');
       setPublished(false);
       setLastVersion(0);
       setDevVersion(0);
       setGrid(Array(16).fill(null));
     }
   }, [selectedForm]);
+
+  // Update formName and formVersion in App whenever they change locally
+  useEffect(() => {
+    setFormName(formName);
+    setFormVersion(lastVersion);
+  }, [formName, lastVersion, setFormName, setFormVersion]);
 
   const handleComponentDetailsChange = (index, field, value) => {
     const updatedComponents = [...components];
@@ -193,12 +199,12 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Add
   };
 
   const handleClearForm = () => {
-    setFormName('');               // Clear form name
-    setPublished(false);            // Reset published status
-    setLastVersion(0);              // Reset version numbers
+    setLocalFormName('');            // Clear form name
+    setPublished(false);             // Reset published status
+    setLastVersion(0);               // Reset version numbers
     setDevVersion(0);
-    setGrid(Array(16).fill(null));  // Clear the grid
-    setSelectedForm(null);          // Reset selected form
+    setGrid(Array(16).fill(null));   // Clear the grid
+    setSelectedForm(null);           // Reset selected form
     alert('Form cleared successfully!');
   };
 
@@ -213,7 +219,7 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Add
             <TextField
               label="Form Name"
               value={formName}
-              onChange={(e) => setFormName(e.target.value)}
+              onChange={(e) => setLocalFormName(e.target.value)}
               fullWidth
               sx={{ marginBottom: 3 }}
             />
