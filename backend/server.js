@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const formRoutes = require('./routes/formRoutes');
 const formDataRoutes = require('./routes/formDataRoutes'); // Import form data routes
 
@@ -27,15 +28,25 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Use routes
 app.use('/api/forms', formRoutes);
-// Register routes
 app.use('/api/formdata', formDataRoutes); // Register form data routes
 
-// Server Status Route
+// Serve production files at /prod
+app.use('/prod', express.static(path.join(__dirname, '../frontend/build')));
+
+// Serve development files at /dev
+app.use('/dev', express.static(path.join(__dirname, '../frontend/build-dev')));
+
+// Redirect root route to /prod by default
 app.get('/', (req, res) => {
+  res.redirect('/prod');
+});
+
+// Server Status Route
+app.get('/status', (req, res) => {
   res.send('Server is running...');
 });
 
 // Listening to the server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
