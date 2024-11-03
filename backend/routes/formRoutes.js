@@ -131,26 +131,4 @@ router.get('/load/:formName', async (req, res) => {
 
 module.exports = router;
 
-// Clear a form
-router.post('/clear', async (req, res) => {
-  const { formName } = req.body;
 
-  try {
-    const form = await Form.findOne({ formName });
-    if (!form) {
-      return res.status(404).json({ message: 'Form not found' });
-    }
-
-    // Reset fields
-    form.formStructure = [];   // Clear the structure by setting it to an empty array
-    form.formVersion = 0;      // Reset formVersion
-    form.devVersion = 0;       // Reset devVersion
-    form.published = false;    // Set published to false
-    await form.save();
-
-    res.status(200).json({ message: `Form ${formName} cleared successfully`, form });
-  } catch (error) {
-    console.error('Error clearing form:', error);
-    res.status(500).json({ message: 'Error clearing form', error });
-  }
-});

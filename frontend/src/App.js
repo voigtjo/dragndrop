@@ -39,8 +39,10 @@ const App = () => {
                     <FormBuilder
                       isAdmin={isAdmin}
                       selectedForm={selectedForm}
+                      setSelectedForm={setSelectedForm} // Pass setSelectedForm as a prop
                       onFormSaved={handleFormSaved}
                     />
+
                     <FormList
                       onSelectForm={handleFormSelect}
                       onFormSaved={formSaved}

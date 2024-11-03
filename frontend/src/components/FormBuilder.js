@@ -85,7 +85,7 @@ const GridCell = ({ index, component, onDrop, onDelete }) => {
   );
 };
 
-const FormBuilder = ({ selectedForm, onFormSaved }) => {
+const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved }) => { // Added setSelectedForm as a prop
   const [grid, setGrid] = useState(Array(16).fill(null));
   const [formName, setFormName] = useState('');
   const [lastVersion, setLastVersion] = useState(0);
@@ -192,19 +192,14 @@ const FormBuilder = ({ selectedForm, onFormSaved }) => {
     }
   };
 
-  const handleClearForm = async () => {
-    try {
-      const response = await axios.post('/api/forms/clear', { formName });
-      setFormName('');
-      setPublished(false);
-      setLastVersion(0);
-      setDevVersion(0);
-      setGrid(Array(16).fill(null));
-      alert('Form cleared successfully!');
-    } catch (error) {
-      console.error('Error clearing form:', error);
-      alert('Error clearing form');
-    }
+  const handleClearForm = () => {
+    setFormName('');               // Clear form name
+    setPublished(false);            // Reset published status
+    setLastVersion(0);              // Reset version numbers
+    setDevVersion(0);
+    setGrid(Array(16).fill(null));  // Clear the grid
+    setSelectedForm(null);          // Reset selected form
+    alert('Form cleared successfully!');
   };
 
   return (
@@ -289,7 +284,12 @@ const FormBuilder = ({ selectedForm, onFormSaved }) => {
             </Button>
           </Box>
           <Box>
-            <Button variant="contained" color="success" onClick={handlePublishForm} disabled={published}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handlePublishForm}
+              disabled={published || !selectedForm} // Disable if already published or no form is selected
+            >
               Publish Form
             </Button>
           </Box>
