@@ -48,9 +48,13 @@ router.post('/unpublish', async (req, res) => {
 
 // Save or update a form
 router.post('/save', async (req, res) => {
-  const { formName, formStructure } = req.body;
+  const { docID, formName, formStructure } = req.body;
 
-  console.log('Incoming form save request:', formName, formStructure);
+  console.log('Incoming form save request:', { docID, formName, formStructure });
+
+  if (!docID) {
+    return res.status(400).json({ message: 'docID is required' });
+  }
 
   if (!formName || !formStructure) {
     console.error('Form name or structure missing');
@@ -58,26 +62,27 @@ router.post('/save', async (req, res) => {
   }
 
   try {
-    let form = await Form.findOne({ formName });
+    let form = await Form.findOne({ docID });
 
     if (form) {
       if (form.published) {
+        console.error(`Attempt to save a published form with docID: ${docID}`);
         return res.status(400).json({ message: 'Cannot save a published form' });
       }
       // Update the form and increment the devVersion
-      console.log(`Updating existing form: ${formName}`);
+      console.log(`Updating existing form: ${formName} with docID: ${docID}`);
       form.formStructure = formStructure;
       form.formDate = Date.now();
       form.devVersion += 1;    // Increment dev version
       form.published = false;   // Set published to false
     } else {
       // Create a new form
-      console.log(`Creating new form: ${formName}`);
-      form = new Form({ formName, formStructure });
+      console.log(`Creating new form: ${formName} with docID: ${docID}`);
+      form = new Form({ docID, formName, formStructure });
     }
 
     await form.save();
-    console.log(`Form saved successfully: ${formName}`);
+    console.log(`Form saved successfully: ${formName} with docID: ${docID}`);
     res.status(200).json(form);
   } catch (error) {
     console.error('Error saving form:', error);
@@ -87,12 +92,10 @@ router.post('/save', async (req, res) => {
 
 
 // routes/formRoutes.js
-
-// Fetch all forms with formStructure included
 router.get('/list', async (req, res) => {
   try {
-    // Ensure devVersion is included in the response along with formVersion, formDate, and formName
-    const forms = await Form.find({}, 'formName formVersion devVersion formDate');
+    // Include docID in the fields to be returned
+    const forms = await Form.find({}, 'docID formName formVersion devVersion formDate');
     res.status(200).json(forms);
   } catch (error) {
     console.error('Error fetching forms:', error);

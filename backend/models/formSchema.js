@@ -12,12 +12,13 @@ const formComponentSchema = new mongoose.Schema({
 
 // Define the main schema for the form
 const formSchema = new mongoose.Schema({
+  docID: { type: String, required: true, unique: true }, // Add docID as a unique and mandatory field
   formName: { type: String, required: true, unique: true },
-  formStructure: { type: [formComponentSchema], required: true }, // Array of components
-  formVersion: { type: Number, default: 0 },  // Published version number
-  devVersion: { type: Number, default: 0 },   // Development version number
+  formStructure: { type: Array, required: true },
+  formVersion: { type: Number, default: 0 },
+  devVersion: { type: Number, default: 0 },
   formDate: { type: Date, default: Date.now },
-  published: { type: Boolean, default: false } // Publishing status
+  published: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('Form', formSchema);

@@ -9,6 +9,7 @@ const FormList = ({ onSelectForm, onFormSaved }) => {
   const fetchForms = async () => {
     try {
       const response = await axios.get('/api/forms/list');
+      console.log('Fetched forms:', response.data);
       setForms(response.data);
     } catch (error) {
       console.error('Error fetching forms:', error);
@@ -43,6 +44,7 @@ const FormList = ({ onSelectForm, onFormSaved }) => {
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell>DocID</TableCell>
             <TableCell>Form Name</TableCell>
             <TableCell>Version</TableCell>
             <TableCell>Dev Version</TableCell>
@@ -53,6 +55,7 @@ const FormList = ({ onSelectForm, onFormSaved }) => {
         <TableBody>
           {forms.map((form) => (
             <TableRow key={form._id}>
+              <TableCell>{form.docID}</TableCell>
               <TableCell>{form.formName}</TableCell>
               <TableCell>{form.formVersion}</TableCell>
               <TableCell>{form.devVersion}</TableCell>

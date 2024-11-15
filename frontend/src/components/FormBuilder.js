@@ -11,6 +11,8 @@ const COMPONENT_TYPES = {
   CHECKBOX: 'checkbox',
 };
 
+
+
 // The draggable components
 const DraggableComponent = ({ type, label, name, selectable }) => {
   const [{ isDragging }, dragRef] = useDrag({
@@ -87,6 +89,7 @@ const GridCell = ({ index, component, onDrop, onDelete }) => {
 
 const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, setFormVersion }) => { 
   const [grid, setGrid] = useState(Array(16).fill(null));
+  const [docID, setDocID] = useState('');
   const [formName, setLocalFormName] = useState('');
   const [lastVersion, setLastVersion] = useState(0);
   const [devVersion, setDevVersion] = useState(0);
@@ -98,6 +101,7 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
 
   useEffect(() => {
     if (selectedForm && selectedForm.formStructure) {
+      setDocID(selectedForm.docID || ''); // Set docID from the selected form
       setLocalFormName(selectedForm.formName);
       setPublished(selectedForm.published || false);
       setLastVersion(selectedForm.formVersion || 0);
@@ -108,6 +112,7 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
       });
       setGrid(updatedGrid);
     } else {
+      setDocID('');
       setLocalFormName('');
       setPublished(false);
       setLastVersion(0);
@@ -155,11 +160,11 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
   };
 
   const handleSaveForm = async () => {
-    if (!formName) {
-      alert('Please enter a form name');
+    if (!formName || !docID) {
+      alert('Please enter both a form name and a unique Document ID (docID)');
       return;
     }
-
+  
     const formStructure = grid
       .filter((cell) => cell !== null)
       .map((cell) => ({
@@ -169,14 +174,15 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
         name: cell.name || '',
         label: cell.label || '',
       }));
-
+  
+    console.log('Payload being sent:', { docID, formName, formStructure }); // Add this for debugging
+  
     try {
       const response = await axios.post('/api/forms/save', {
+        docID,
         formName,
         formStructure,
       });
-      setDevVersion(response.data.devVersion);
-      setPublished(false);
       alert('Form saved successfully!');
       onFormSaved();
     } catch (error) {
@@ -184,19 +190,25 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
       alert('Error saving form');
     }
   };
+  
 
   const handlePublishForm = async () => {
     try {
       const response = await axios.post('/api/forms/publish', { formName });
+      const updatedForm = response.data.form; // Extract updated form details from response
+  
       setPublished(true);
-      setLastVersion(response.data.formVersion);
-      setDevVersion(0);
+      setLastVersion(updatedForm.formVersion); // Update the formVersion state
+      setDevVersion(0); // Reset the dev version
       alert('Form published successfully!');
+      onFormSaved(); // Notify parent component to refresh forms list
     } catch (error) {
       console.error('Error publishing form:', error);
       alert('Error publishing form');
     }
   };
+  
+  
 
   const handleClearForm = () => {
     setLocalFormName('');            // Clear form name
@@ -215,15 +227,26 @@ const FormBuilder = ({ selectedForm, setSelectedForm, onFormSaved, setFormName, 
           Form Builder
         </Typography>
         <Grid container spacing={2} alignItems="center" sx={{ marginBottom: 3 }}>
-          <Grid item xs={6}>
+          <Grid item xs={3}>
+            <TextField
+              label="Document ID (docID)"
+              value={docID}
+              onChange={(e) => setDocID(e.target.value)}
+              fullWidth
+              required
+              sx={{ height: '100%' }} // Optional: Ensure it fills the container height
+            />
+          </Grid>
+          <Grid item xs={3}>
             <TextField
               label="Form Name"
               value={formName}
               onChange={(e) => setLocalFormName(e.target.value)}
               fullWidth
-              sx={{ marginBottom: 3 }}
+              sx={{ height: '100%' }} // Optional: Ensure it fills the container height
             />
           </Grid>
+
           <Grid item xs={3}>
             <Typography variant="body1">Version: {lastVersion}</Typography>
           </Grid>
