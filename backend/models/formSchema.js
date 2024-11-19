@@ -1,24 +1,24 @@
-// models/formSchema.js
 const mongoose = require('mongoose');
 
-// Define the schema for each component in formStructure
 const formComponentSchema = new mongoose.Schema({
-  id: { type: String, required: true },       // Component ID
-  type: { type: String, required: true },     // Component type (e.g., text, checkbox)
-  position: { type: Number, required: true }, // Position in the grid (0-15 for a 4x4 grid)
-  name: { type: String, required: true },     // Component name
-  label: { type: String, required: true }     // Component label
-}, { _id: false }); // _id: false disables automatic _id creation for embedded documents
+  id: { type: String, required: true },
+  type: { type: String, required: true },
+  position: { type: Number, required: true },
+  name: { type: String, required: true },
+  label: { type: String, required: true }
+}, { _id: false });
 
-// Define the main schema for the form
 const formSchema = new mongoose.Schema({
-  docID: { type: String, required: true, unique: true }, // Add docID as a unique and mandatory field
-  formName: { type: String, required: true, unique: true },
+  docID: { type: String, required: true }, // Unique with formVersion
+  formName: { type: String, required: true },
   formStructure: { type: Array, required: true },
   formVersion: { type: Number, default: 0 },
   devVersion: { type: Number, default: 0 },
   formDate: { type: Date, default: Date.now },
   published: { type: Boolean, default: false }
 });
+
+// Create a compound index for docID and formVersion
+formSchema.index({ docID: 1, formVersion: 1 }, { unique: true });
 
 module.exports = mongoose.model('Form', formSchema);

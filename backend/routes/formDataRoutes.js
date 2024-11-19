@@ -42,18 +42,29 @@ router.put('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
   const { formName, formVersion } = req.query;
   console.log("Received request with formName:", formName, "and formVersion:", formVersion); // Debugging line
+
   try {
     const formData = await FormData.findOne({ formName, formVersion });
+
     if (!formData) {
       console.log("Form data not found for", formName, formVersion); // Debugging line
-      return res.status(404).json({ message: 'Form data not found' });
+
+      // Send a response indicating no data is found
+      return res.status(200).json({
+        message: 'No existing form data found. Returning an empty structure.',
+        formName,
+        formVersion,
+        formData: [], // Provide an empty data structure
+      });
     }
+
     res.status(200).json(formData);
   } catch (err) {
     console.error("Error loading form data:", err);
     res.status(500).json({ message: 'Error loading form data', error: err });
   }
 });
+
 
 // Route to load all form data for a specific formName
 router.get('/:formName', async (req, res) => {

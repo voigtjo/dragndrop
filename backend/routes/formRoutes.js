@@ -62,33 +62,36 @@ router.post('/save', async (req, res) => {
   }
 
   try {
-    let form = await Form.findOne({ docID });
+    // Check if a form with the same formName exists
+    let form = await Form.findOne({ formName });
 
     if (form) {
       if (form.published) {
-        console.error(`Attempt to save a published form with docID: ${docID}`);
+        console.error(`Attempt to save a published form with formName: ${formName}`);
         return res.status(400).json({ message: 'Cannot save a published form' });
       }
-      // Update the form and increment the devVersion
-      console.log(`Updating existing form: ${formName} with docID: ${docID}`);
+      // Update the existing form
+      console.log(`Updating existing form: ${formName}`);
+      form.docID = docID;
       form.formStructure = formStructure;
       form.formDate = Date.now();
-      form.devVersion += 1;    // Increment dev version
-      form.published = false;   // Set published to false
+      form.devVersion += 1; // Increment the dev version
+      form.published = false; // Reset published status
     } else {
       // Create a new form
-      console.log(`Creating new form: ${formName} with docID: ${docID}`);
+      console.log(`Creating new form: ${formName}`);
       form = new Form({ docID, formName, formStructure });
     }
 
     await form.save();
-    console.log(`Form saved successfully: ${formName} with docID: ${docID}`);
+    console.log(`Form saved successfully: ${formName}`);
     res.status(200).json(form);
   } catch (error) {
     console.error('Error saving form:', error);
     res.status(500).json({ message: 'Error saving form', error });
   }
 });
+
 
 
 // routes/formRoutes.js

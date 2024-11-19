@@ -1,29 +1,54 @@
-// components/FormDataViewer.js
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Box, Typography, TextField, Checkbox, FormControlLabel, Button } from '@mui/material';
 
+const DEFAULT_FORM_STRUCTURE = [
+  { id: 'text1', type: 'text', label: 'Default Text Field', value: '' },
+  { id: 'checkbox1', type: 'checkbox', label: 'Default Checkbox Field', value: false },
+];
+
 const FormDataViewer = () => {
   const { formName, formVersion } = useParams();
   const [formData, setFormData] = useState(null);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchFormData = async () => {
       try {
-        setError(null);
         setLoading(true);
+        setError(null);
 
         const response = await axios.get('/api/formdata', {
           params: { formName, formVersion },
         });
-        setFormData(response.data);
+
+        console.log('Fetched Data:', response.data);
+
+        // Check if formData exists
+        if (response.data.formData && response.data.formData.length > 0) {
+          setFormData(response.data);
+        } else {
+          console.log('No existing form data found. Returning default structure.');
+          setFormData({
+            formName,
+            formVersion,
+            formData: DEFAULT_FORM_STRUCTURE,
+          });
+        }
       } catch (err) {
-        setError('Error loading form data');
-        console.error('Error fetching form data:', err);
+        if (err.response && err.response.status === 404) {
+          console.log('No data found. Initializing with default structure.');
+          setFormData({
+            formName,
+            formVersion,
+            formData: DEFAULT_FORM_STRUCTURE,
+          });
+        } else {
+          setError('Error loading form data');
+          console.error('Error fetching form data:', err);
+        }
       } finally {
         setLoading(false);
       }
@@ -32,7 +57,6 @@ const FormDataViewer = () => {
     fetchFormData();
   }, [formName, formVersion]);
 
-  // Handle saving form data
   const handleSaveFormData = async () => {
     try {
       const saveData = formData.formData.map((field) => ({
@@ -41,9 +65,7 @@ const FormDataViewer = () => {
         value: field.value || '',
       }));
 
-      // Check if the formData has an _id for update, otherwise create new
       if (formData._id) {
-        // Update existing dataset
         await axios.put(`/api/formdata/${formData._id}`, {
           formName,
           formVersion,
@@ -53,13 +75,12 @@ const FormDataViewer = () => {
         });
         alert('Form data updated successfully!');
       } else {
-        // Create new dataset
         await axios.post('/api/formdata/save', {
           formName,
           formVersion,
           formData: saveData,
-          formDate: formData.formDate,
-          dataName: formData.dataName || 'DefaultDataName',
+          formDate: new Date(),
+          dataName: 'NewDataEntry',
         });
         alert('Form data saved successfully!');
       }
@@ -69,7 +90,6 @@ const FormDataViewer = () => {
     }
   };
 
-  // Handle input change for text fields and checkboxes
   const handleInputChange = (id, value) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -81,7 +101,7 @@ const FormDataViewer = () => {
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
-  if (!formData) return <p>No data available for this form.</p>;
+  if (!formData || !formData.formData) return <p>No form data available.</p>;
 
   return (
     <Box sx={{ padding: 3 }}>
@@ -89,7 +109,6 @@ const FormDataViewer = () => {
         Form Data for {formData.formName} (Version: {formData.formVersion})
       </Typography>
 
-      {/* Display ObjectId as a non-editable field */}
       {formData._id && (
         <TextField
           label="Dataset ID (ObjectId)"
@@ -106,7 +125,7 @@ const FormDataViewer = () => {
           <Box key={field.id} sx={{ marginBottom: 2 }}>
             {field.type === 'text' ? (
               <TextField
-                label="Text Field"
+                label={field.label || 'Text Field'}
                 value={field.value || ''}
                 onChange={(e) => handleInputChange(field.id, e.target.value)}
                 fullWidth
@@ -120,7 +139,7 @@ const FormDataViewer = () => {
                     onChange={(e) => handleInputChange(field.id, e.target.checked)}
                   />
                 }
-                label="Checkbox Field"
+                label={field.label || 'Checkbox Field'}
               />
             ) : (
               <Typography>Unknown field type: {field.type}</Typography>
