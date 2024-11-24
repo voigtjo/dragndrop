@@ -3,6 +3,22 @@ const express = require('express');
 const router = express.Router();
 const Form = require('../models/formSchema');
 
+// Route to load a form by docID
+router.get('/load/:docID', async (req, res) => {
+  const { docID } = req.params;
+
+  try {
+    const form = await Form.findOne({ docID });
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found.' });
+    }
+    res.status(200).json(form);
+  } catch (err) {
+    console.error('Error fetching form structure:', err);
+    res.status(500).json({ message: 'Error fetching form structure.', error: err });
+  }
+});
+
 // Publish a form
 router.post('/publish', async (req, res) => {
   const { formName } = req.body;

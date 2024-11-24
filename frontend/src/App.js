@@ -1,58 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'; // Add Navigate for redirection
 import { Box } from '@mui/material';
-import FormDataViewer from './components/FormDataViewer'; // Import FormDataViewer
-import FormBuilder from './components/FormBuilder';
-import FormList from './components/FormList';
-import FormEditor from './components/FormEditor';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import DevHeader from './components/DevHeader';
 import ProdHeader from './components/ProdHeader';
-import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom';
-import axios from 'axios';
+import FormBuilder from './components/FormBuilder';
+import FormList from './components/FormList';
+import FormEditor from './components/FormEditor';
+import FormDataList from './components/FormDataList'; // Add new component
+import FormDataEditor from './components/FormDataEditor'; // Add new component
 
 const App = () => {
-  const [isAdmin, setIsAdmin] = useState(true);
-  const [selectedForm, setSelectedForm] = useState(null);
-  const [formSaved, setFormSaved] = useState(false);
-  const [formName, setFormName] = useState('');
-  const [formVersion, setFormVersion] = useState(0);
+  const [isAdmin, setIsAdmin] = React.useState(true);
+  const [selectedForm, setSelectedForm] = React.useState(null);
+  const [formSaved, setFormSaved] = React.useState(false);
+  const [formName, setFormName] = React.useState('');
+  const [formVersion, setFormVersion] = React.useState(0);
+  const [docID, setDocID] = React.useState(''); // Add docID state
 
-  // Handle form save, which will trigger a reload of the form list
-  const handleFormSaved = () => {
-    setFormSaved(!formSaved);
-  };
+  const handleFormSaved = () => setFormSaved(!formSaved);
 
-  // Handle form selection (for editing or execution)
   const handleFormSelect = (form) => {
     setSelectedForm(form);
-  };
-
-  // Load form data based on formName and formVersion
-  const FormEditorLoader = () => {
-    const { formName, formVersion } = useParams();
-    const [formData, setFormData] = useState(null);
-
-    useEffect(() => {
-      // Fetch data from MongoDB using formName and formVersion
-      const fetchFormData = async () => {
-        try {
-          const response = await axios.get(`/api/formdata`, {
-            params: { formName, formVersion }
-          });
-          setFormData(response.data);
-        } catch (error) {
-          console.error("Error loading form data:", error);
-        }
-      };
-      fetchFormData();
-    }, [formName, formVersion]);
-
-    return formData ? (
-      <FormEditor selectedForm={formData} />
-    ) : (
-      <p>Loading form data...</p>
-    );
+    setFormName(form?.formName || '');
+    setFormVersion(form?.formVersion || 0);
+    setDocID(form?.docID || '');
   };
 
   return (
@@ -68,6 +41,7 @@ const App = () => {
                 setIsAdmin={setIsAdmin}
                 formName={formName}
                 formVersion={formVersion}
+                docID={docID} // Pass docID to DevHeader
               />
               <Box sx={{ padding: 3 }}>
                 {isAdmin ? (
@@ -85,27 +59,28 @@ const App = () => {
                       onFormSaved={formSaved}
                     />
                   </>
+                ) : selectedForm ? (
+                  <FormEditor selectedForm={selectedForm} />
                 ) : (
-                  selectedForm ? (
-                    <FormEditor selectedForm={selectedForm} />
-                  ) : (
-                    <p>Select a form from Admin mode to view it in Execution Mode.</p>
-                  )
+                  <p>Select a form from Admin mode to view it in Execution Mode.</p>
                 )}
               </Box>
             </DndProvider>
           }
         />
 
-        {/* Route to edit a specific form by name and version */}
-        <Route path="/dev/:formName/:formVersion" element={<FormEditorLoader />} />
+        {/* Routes for form data list and editor */}
+        <Route path="/formData/docID/:docID/list" element={<FormDataList />} />
+        <Route
+          path="/formData/docID/:docID/subject/:subjectID/:mode"
+          element={<FormDataEditor />}
+        />
 
-        {/* Prod environment route */}
+        {/* Other routes */}
         <Route path="/prod" element={<ProdHeader />} />
 
-        {/* Default route redirects to /prod */}
-        <Route path="/" element={<ProdHeader />} />
-        <Route path="/view/:formName/:formVersion" element={<FormDataViewer />} />
+        {/* Default route redirects to /dev */}
+        <Route path="/" element={<Navigate to="/dev" replace />} />
       </Routes>
     </BrowserRouter>
   );
